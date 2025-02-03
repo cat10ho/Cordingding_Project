@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package initial;
+
+// 최초 패킷 구조
+message InitialPacket {
+  string deviceId = 1;
+  float latency = 2;
+}
