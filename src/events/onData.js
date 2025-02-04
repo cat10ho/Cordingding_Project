@@ -21,37 +21,22 @@ export const onData = (socket) => async (data) => {
     const length = socket.buffer.readUInt32BE(0); 
 
     // 2. 패킷 타입 정보 수신 (1바이트)
-    const packetType = socket.buffer.readUInt8(config.packet.totalLength);
+    const packetId = socket.buffer.readUInt8(config.packet.totalLength);
     // 3. 패킷 전체 길이 확인 후 데이터 수신->길이가 랭스가 되면 시작.
     if (socket.buffer.length >= length) {
       // 패킷 데이터를 자르고 버퍼에서 제거
-      const packet = socket.buffer.slice(totalHeaderLength, length);//이건 이번에 쓸 패킷 자르기.
+      const packetData = socket.buffer.slice(totalHeaderLength, length);//이건 이번에 쓸 패킷 자르기.
       socket.buffer = socket.buffer.slice(length);//자르고 남은건 다음꺼니까 다시 넣어줌.
 
       try {
-        switch (packetType) {
-          case PACKET_TYPE.PING:
-            {
-              const protoMessages = getProtoMessages();
-              const Ping = protoMessages.common.Ping;
-              const pingMessage = Ping.decode(packet);
-              const user = getUserBySocket(socket);
-              if (!user) {
-                throw new CustomError(ErrorCodes.USER_NOT_FOUND, '유저를 찾을 수 없습니다.');
-              }
-              user.handlePong(pingMessage);
-            }
-            break;
-          case PACKET_TYPE.NORMAL:
-            const { handlerId,userId,payload } = packetParser(packet);
-            const handler = getHandlerById(handlerId);
+            const { payload } = packetParser(packetData);
+            const handler = getHandlerById(packetId);
             await handler({
               socket,
-              userId,
               payload,
             });
         }
-      } catch (error) {
+       catch (error) {
         handleError(socket, error);
       }
     } else {
